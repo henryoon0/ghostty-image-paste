@@ -8,6 +8,8 @@ INIT="$HS_DIR/init.lua"
 rm -f "$HS_DIR/ghostty-image-paste.lua"
 if [ -f "$INIT" ]; then
   sed -i '' -e '/-- Ghostty에서 Cmd+V로 이미지 붙여넣기/d' -e '/require("ghostty-image-paste")/d' "$INIT"
+  # 설치가 새로 만든 파일이라 이제 비어 있으면 지운다
+  if ! grep -q '[^[:space:]]' "$INIT"; then rm -f "$INIT"; fi
 fi
 rm -rf "$HOME/Library/Caches/ghostty-image-paste"
 
