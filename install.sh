@@ -17,6 +17,12 @@ MODULE="$HS_DIR/ghostty-image-paste.lua"
 INIT="$HS_DIR/init.lua"
 REQUIRE_LINE='ghosttyImagePaste = require("ghostty-image-paste")'
 
+# ⇧⌘S = 선택 영역 스크린샷을 클립보드로 (macOS 기본은 ⌃⇧⌘4). 끄려면 --no-screenshot-shortcut
+SCREENSHOT_SHORTCUT=1
+for arg in "$@"; do
+  [ "$arg" = "--no-screenshot-shortcut" ] && SCREENSHOT_SHORTCUT=0
+done
+
 case "$(uname -s)" in
   Darwin) ;;
   Linux)
@@ -95,11 +101,16 @@ else
   echo "→ $INIT 에 이미 설정돼 있음"
 fi
 
-# 4. Hammerspoon 다시 켜기 (로그인 시 자동 실행은 모듈이 켠다)
+# 4. ⇧⌘S 스크린샷 단축키 (원래 값은 백업해 두고 제거할 때 되돌린다)
+if [ "$SCREENSHOT_SHORTCUT" = 1 ]; then
+  setup_screenshot_shortcut
+fi
+
+# 5. Hammerspoon 다시 켜기 (로그인 시 자동 실행은 모듈이 켠다)
 killall Hammerspoon >/dev/null 2>&1 || true
 open "$HS_APP"
 
-# 5. 손쉬운 사용 설정 화면 열기
+# 6. 손쉬운 사용 설정 화면 열기
 open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility" 2>/dev/null || true
 
 if [ ! -d /Applications/Ghostty.app ] && [ ! -d "$HOME/Applications/Ghostty.app" ]; then
@@ -119,6 +130,71 @@ cat <<'EOF'
 켜는 순간 화면에 "Ghostty 이미지 붙여넣기 준비 완료"가 뜹니다.
 그다음부터 이미지를 복사하고 Ghostty에서 Cmd+V를 누르면 됩니다.
 EOF
+}
+
+# ── ⇧⌘S 스크린샷 단축키 ─────────────────────────────────────────────
+# macOS 단축키 설정(com.apple.symbolichotkeys)의 31번 = "선택 영역 사진을 클립보드로 복사"
+SHORTCUT_XML='<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>115</integer><integer>1</integer><integer>1179648</integer></array><key>type</key><string>standard</string></dict></dict>'
+
+# 단축키 설정 읽기/쓰기. 실제 사용자 홈이면 macOS 설정(defaults)을, 가짜 홈 폴더(시험)면 그 안의 파일을 직접 다룬다.
+# (가짜 홈에서 defaults를 쓰면 저장이 늦게 반영돼 시험 결과가 흔들리고, 진짜 설정을 건드릴 위험도 있다)
+HK_FILE="$HOME/Library/Preferences/com.apple.symbolichotkeys.plist"
+hk_mode() {
+  local real_home
+  real_home="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
+  if [ "$HOME" = "$real_home" ]; then echo real; else echo file; fi
+}
+hk_read31() {
+  if [ "$(hk_mode)" = real ]; then
+    defaults export com.apple.symbolichotkeys - 2>/dev/null | plutil -extract AppleSymbolicHotKeys.31 xml1 -o - - 2>/dev/null || true
+  elif [ -f "$HK_FILE" ]; then
+    plutil -extract AppleSymbolicHotKeys.31 xml1 -o - "$HK_FILE" 2>/dev/null || true
+  fi
+}
+hk_write31() {
+  if [ "$(hk_mode)" = real ]; then
+    defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 31 "$1"
+  else
+    mkdir -p "$(dirname "$HK_FILE")"
+    [ -f "$HK_FILE" ] || printf '<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0"><dict/></plist>\n' > "$HK_FILE"
+    plutil -extract AppleSymbolicHotKeys xml1 -o /dev/null "$HK_FILE" 2>/dev/null || plutil -insert AppleSymbolicHotKeys -dictionary "$HK_FILE"
+    plutil -remove AppleSymbolicHotKeys.31 "$HK_FILE" 2>/dev/null || true
+    plutil -insert AppleSymbolicHotKeys.31 -xml "$1" "$HK_FILE"
+  fi
+}
+hk_apply() {
+  # 로그아웃 없이 바로 적용한다. 실제 사용자 홈에서만.
+  local a="/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings"
+  if [ "$(hk_mode)" = real ] && [ -x "$a" ]; then "$a" -u >/dev/null 2>&1 || true; fi
+}
+
+setup_screenshot_shortcut() {
+  local backup_dir current
+  backup_dir="$HOME/Library/Application Support/ghostty-image-paste"
+  current="$(hk_read31)"
+
+  if printf '%s' "$current" | tr -d ' \t\n' | grep -qF '<integer>115</integer><integer>1</integer><integer>1179648</integer>' \
+     && printf '%s' "$current" | grep -q '<true/>'; then
+    echo "→ 스크린샷 단축키: 이미 ⇧⌘S 로 설정돼 있음"
+    return 0
+  fi
+
+  # 원래 값 백업 (이미 백업이 있으면 처음 값을 지키려고 덮어쓰지 않음)
+  mkdir -p "$backup_dir"
+  if [ ! -e "$backup_dir/screenshot-shortcut.xml" ] && [ ! -e "$backup_dir/screenshot-shortcut.default" ]; then
+    if [ -n "$current" ]; then
+      printf '%s\n' "$current" > "$backup_dir/screenshot-shortcut.xml"
+    elif [ -f "$HK_FILE" ]; then
+      echo "default" > "$backup_dir/screenshot-shortcut.default"
+    else
+      echo "default-nofile" > "$backup_dir/screenshot-shortcut.default"
+    fi
+  fi
+
+  hk_write31 "$SHORTCUT_XML"
+  hk_apply
+  echo "→ 스크린샷 단축키: ⇧⌘S = 선택 영역을 클립보드로 복사 (원래 단축키는 제거할 때 되돌림)"
+  echo "   참고: 여러 앱의 '다른 이름으로 저장(⇧⌘S)'보다 이 단축키가 먼저 작동해요."
 }
 
 main "$@"

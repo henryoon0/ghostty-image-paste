@@ -26,6 +26,16 @@ curl -fsSL https://raw.githubusercontent.com/henryoon0/ghostty-image-paste/main/
 
 Homebrew나 관리자 비밀번호는 필요 없어요. Hammerspoon이 없으면 공식 배포 파일을 받아 설치하고, 맥을 켤 때 자동으로 실행되게도 설정합니다.
 
+스크린샷 단축키도 함께 바꿔요. **`⇧⌘S`(Shift+Command+S)를 누르면 선택한 영역이 바로 클립보드로 복사**돼요. macOS 원래 단축키는 `⌃⇧⌘4`라서 손가락이 꼬이거든요. `⇧⌘S`로 찍고 Ghostty에서 `Cmd+V`하면 끝이에요.
+
+- 많은 앱에서 `⇧⌘S`는 "다른 이름으로 저장"이에요. 이 단축키가 먼저 작동해서, 그 앱들에서는 `⇧⌘S`로 저장이 안 돼요. 메뉴에서 저장하면 됩니다.
+- 원래 단축키는 백업해 두고, 제거할 때 되돌려요.
+- 단축키는 바꾸고 싶지 않다면 이렇게 설치하세요.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/henryoon0/ghostty-image-paste/main/install.sh | bash -s -- --no-screenshot-shortcut
+```
+
 설치가 끝나면 **손쉬운 사용**(영어 macOS: Accessibility) 설정 화면이 자동으로 열려요. 거기서 **Hammerspoon 스위치 하나만 켜주세요.** 키 입력을 받으려면 이 권한이 필요하고, macOS는 이 권한을 사람만 켤 수 있게 막아두었어요.
 
 켜는 순간 화면에 "Ghostty 이미지 붙여넣기 준비 완료"가 뜹니다. 앱을 다시 켤 필요는 없어요.
@@ -40,11 +50,12 @@ Claude Code 같은 AI에게 이 링크를 주고 "설치해줘"라고 하면 됩
 > 3. Tell the user to turn on the Hammerspoon switch in that pane. You cannot do this step for the user. macOS allows only a person to grant this permission.
 > 4. When the user turns it on, the alert "Ghostty 이미지 붙여넣기 준비 완료" shows. The user does not need to restart anything.
 > 5. The installer writes to `~/.hammerspoon` and `/Applications` (or `~/Applications`), and downloads from github.com. If your sandbox blocks network access or writes outside the project folder, ask the user to allow it or to run the command in their own terminal.
-> 6. To test: the user copies an image (for example `Cmd+Shift+Ctrl+4`), then presses `Cmd+V` in Ghostty. `[Image #1]` shows in Claude Code.
+> 6. The installer also sets `Shift+Cmd+S` as "copy selected area screenshot to clipboard" and backs up the old shortcut. Pass `--no-screenshot-shortcut` (`| bash -s -- --no-screenshot-shortcut`) if the user does not want this.
+> 7. To test: the user presses `Shift+Cmd+S`, selects an area, then presses `Cmd+V` in Ghostty. `[Image #1]` shows in Claude Code.
 
 ## 사용법
 
-1. 스크린샷을 찍거나 이미지를 복사합니다. (`Cmd+Shift+Ctrl+4`로 찍으면 바로 클립보드에 들어가요.)
+1. `⇧⌘S`를 누르고 영역을 선택해 스크린샷을 찍어요. 이미지를 복사해도 돼요.
 2. Ghostty에서 Claude Code 입력창에 `Cmd+V`를 누릅니다.
 3. `[Image #1]`이 붙으면 끝이에요.
 

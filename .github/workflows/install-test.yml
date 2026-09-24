@@ -27,6 +27,10 @@ jobs:
           test -d /Applications/Hammerspoon.app || test -d "$HOME/Applications/Hammerspoon.app"
           cmp ghostty-image-paste.lua "$HOME/.hammerspoon/ghostty-image-paste.lua"
           test "$(grep -c 'require("ghostty-image-paste")' "$HOME/.hammerspoon/init.lua")" = 1
+      - name: Screenshot shortcut is Shift+Cmd+S
+        run: |
+          p="$(defaults export com.apple.symbolichotkeys - | plutil -extract AppleSymbolicHotKeys.31.value.parameters json -o - -)"
+          echo "$p"; test "$p" = "[115,1,1179648]"
       - name: Install again (must not duplicate)
         run: |
           env PATH="$RUNNER_TEMP/stub:/usr/bin:/bin:/usr/sbin:/sbin" bash install.sh
@@ -40,6 +44,14 @@ jobs:
           env PATH="$RUNNER_TEMP/stub:/usr/bin:/bin:/usr/sbin:/sbin" bash uninstall.sh
           test ! -e "$HOME/.hammerspoon/ghostty-image-paste.lua"
           test ! -e "$HOME/.hammerspoon/init.lua"
+          test ! -e "$HOME/Library/Application Support/ghostty-image-paste"
+          p="$(defaults export com.apple.symbolichotkeys - | plutil -extract AppleSymbolicHotKeys.31.value.parameters json -o - - 2>/dev/null || echo none)"
+          echo "after uninstall: $p"; test "$p" != "[115,1,1179648]"
+      - name: Opt out leaves the shortcut alone
+        run: |
+          env PATH="$RUNNER_TEMP/stub:/usr/bin:/bin:/usr/sbin:/sbin" bash install.sh --no-screenshot-shortcut
+          p="$(defaults export com.apple.symbolichotkeys - | plutil -extract AppleSymbolicHotKeys.31.value.parameters json -o - - 2>/dev/null || echo none)"
+          test "$p" != "[115,1,1179648]"
 
   not-macos:
     strategy:
