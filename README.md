@@ -12,10 +12,22 @@ Ghostty 터미널에서 Claude Code에 이미지를 `Cmd+V`로 붙여넣을 수 
 curl -fsSL https://raw.githubusercontent.com/henryoon0/ghostty-image-paste/main/install.sh | bash
 ```
 
-처음 설치했다면 두 가지만 해주세요.
+Homebrew나 관리자 비밀번호는 필요 없어요. Hammerspoon이 없으면 공식 배포 파일을 받아 설치하고, 맥을 켤 때 자동으로 실행되게도 설정합니다.
 
-1. **시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용**에서 Hammerspoon을 켭니다. 키 입력을 받으려면 이 권한이 필요해요.
-2. 메뉴바의 Hammerspoon 아이콘 → **Preferences** → **Launch Hammerspoon at login**을 체크합니다. 맥을 다시 켜도 계속 작동해요.
+설치가 끝나면 **손쉬운 사용** 설정 화면이 자동으로 열려요. 거기서 **Hammerspoon 스위치 하나만 켜주세요.** 키 입력을 받으려면 이 권한이 필요하고, macOS는 이 권한을 사람만 켤 수 있게 막아두었어요.
+
+켜는 순간 화면에 "Ghostty 이미지 붙여넣기 준비 완료"가 뜹니다. 앱을 다시 켤 필요는 없어요.
+
+## AI 에이전트에게 설치를 맡길 때
+
+Claude Code 같은 AI에게 이 링크를 주고 "설치해줘"라고 하면 됩니다. 아래는 에이전트가 따를 절차예요.
+
+> **For AI agents:**
+> 1. Run: `curl -fsSL https://raw.githubusercontent.com/henryoon0/ghostty-image-paste/main/install.sh | bash`
+> 2. It needs no sudo and no Homebrew. It installs Hammerspoon if missing, installs the module, and opens System Settings → Privacy & Security → Accessibility.
+> 3. Tell the user to turn on the Hammerspoon switch in that pane. You cannot do this step for the user. macOS allows only a person to grant this permission.
+> 4. When the user turns it on, the alert "Ghostty 이미지 붙여넣기 준비 완료" shows. The user does not need to restart anything.
+> 5. To test: the user copies an image (for example `Cmd+Shift+Ctrl+4`), then presses `Cmd+V` in Ghostty. `[Image #1]` shows in Claude Code.
 
 ## 사용법
 

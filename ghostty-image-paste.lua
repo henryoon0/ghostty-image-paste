@@ -63,7 +63,7 @@ local function pasteImageAsPath()
   return true
 end
 
-M.tap = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, function(e)
+local function onKeyDown(e)
   if bypass or e:getKeyCode() ~= KEY_V then return false end
 
   local flags = e:getFlags()
@@ -74,7 +74,29 @@ M.tap = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, function(e)
   if not clipboardIsImageOnly() then return false end
 
   return pasteImageAsPath()
-end)
-M.tap:start()
+end
+
+local function startTap()
+  if M.tap then M.tap:stop() end
+  M.tap = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, onKeyDown)
+  M.tap:start()
+end
+
+-- 맥을 다시 켜도 계속 작동하게 로그인 시 Hammerspoon 자동 실행
+hs.autoLaunch(true)
+
+-- 손쉬운 사용 권한이 없으면 키를 못 받는다. 권한이 켜질 때까지 기다렸다가 스스로 다시 시작한다.
+if hs.accessibilityState() then
+  startTap()
+else
+  hs.alert.show("Ghostty 이미지 붙여넣기: 손쉬운 사용에서 Hammerspoon을 켜주세요", 6)
+  M.permissionTimer = hs.timer.doEvery(2, function()
+    if hs.accessibilityState() then
+      M.permissionTimer:stop()
+      startTap()
+      hs.alert.show("Ghostty 이미지 붙여넣기 준비 완료")
+    end
+  end)
+end
 
 return M
