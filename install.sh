@@ -26,7 +26,12 @@ fi
 
 # 2. 모듈 복사 (저장소를 clone했으면 로컬 파일, 아니면 GitHub에서 받기)
 mkdir -p "$HS_DIR"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || true)"
+# curl | bash로 실행하면 스크립트 파일이 없다. 이때 현재 폴더의 같은 이름 파일을 집어 오지 않도록
+# 스크립트가 실제 파일로 실행된 경우에만 옆에 있는 모듈을 쓴다.
+SCRIPT_DIR=""
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+fi
 if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/ghostty-image-paste.lua" ]; then
   cp "$SCRIPT_DIR/ghostty-image-paste.lua" "$MODULE"
 else
