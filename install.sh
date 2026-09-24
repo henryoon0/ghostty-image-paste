@@ -8,16 +8,37 @@ set -euo pipefail
 main() {
 
 RAW_URL="https://raw.githubusercontent.com/henryoon0/ghostty-image-paste/main/ghostty-image-paste.lua"
-HS_RELEASE_API="https://api.github.com/repos/Hammerspoon/hammerspoon/releases/latest"
+# 버전을 고정한 직접 주소. GitHub API("latest")는 같은 인터넷 주소에서 시간당 60번까지만 받아줘서
+# 강의실처럼 여러 명이 같은 와이파이로 설치하면 막힌다.
+HS_VERSION="1.1.1"
+HS_ZIP_URL="https://github.com/Hammerspoon/hammerspoon/releases/download/${HS_VERSION}/Hammerspoon-${HS_VERSION}.zip"
 HS_DIR="$HOME/.hammerspoon"
 MODULE="$HS_DIR/ghostty-image-paste.lua"
 INIT="$HS_DIR/init.lua"
 REQUIRE_LINE='ghosttyImagePaste = require("ghostty-image-paste")'
 
-if [ "$(uname)" != "Darwin" ]; then
-  echo "이 도구는 macOS 전용입니다." >&2
-  exit 1
-fi
+case "$(uname -s)" in
+  Darwin) ;;
+  Linux)
+    cat >&2 <<'EOF'
+이 도구는 macOS 전용이라 설치하지 않았습니다.
+리눅스에서는 이 도구가 필요 없어요. Claude Code가 클립보드 도구로 이미지를 직접 꺼냅니다.
+  1. 클립보드 도구 설치: Wayland면 wl-clipboard, X11이면 xclip
+     예) sudo apt install wl-clipboard xclip
+  2. Claude Code 입력창에서 Ctrl+V
+EOF
+    exit 1 ;;
+  MINGW*|MSYS*|CYGWIN*)
+    cat >&2 <<'EOF'
+이 도구는 macOS 전용이라 설치하지 않았습니다.
+Windows에는 Ghostty가 없고, 이 도구도 필요 없어요.
+Windows Terminal 등에서 Claude Code 입력창에 Alt+V를 누르면 이미지가 붙습니다.
+EOF
+    exit 1 ;;
+  *)
+    echo "이 도구는 macOS 전용입니다. (감지된 운영체제: $(uname -s))" >&2
+    exit 1 ;;
+esac
 
 find_hammerspoon() {
   for d in /Applications "$HOME/Applications"; do
@@ -32,13 +53,12 @@ if ! HS_APP="$(find_hammerspoon)"; then
     HS_APP="$(find_hammerspoon)"
   else
     echo "→ Hammerspoon 내려받는 중..."
-    ZIP_URL="$(curl -fsSL "$HS_RELEASE_API" | grep -o '"browser_download_url": *"[^"]*\.zip"' | head -1 | sed 's/.*"\(https[^"]*\)"/\1/')"
-    if [ -z "$ZIP_URL" ]; then
-      echo "Hammerspoon 다운로드 주소를 찾지 못했습니다. https://www.hammerspoon.org 에서 직접 설치한 뒤 다시 실행하세요." >&2
+    TMP="$(mktemp -d)"
+    if ! curl -fsSL "$HS_ZIP_URL" -o "$TMP/hs.zip"; then
+      echo "Hammerspoon을 받지 못했습니다. 회사 네트워크가 GitHub을 막았을 수 있어요." >&2
+      echo "https://www.hammerspoon.org 에서 직접 설치한 뒤 이 명령어를 다시 실행하세요." >&2
       exit 1
     fi
-    TMP="$(mktemp -d)"
-    curl -fsSL "$ZIP_URL" -o "$TMP/hs.zip"
     ditto -x -k "$TMP/hs.zip" "$TMP"
     APP_DIR="/Applications"
     [ -w "$APP_DIR" ] || { APP_DIR="$HOME/Applications"; mkdir -p "$APP_DIR"; }
@@ -92,7 +112,9 @@ cat <<'EOF'
 설치 완료. 마지막 한 단계만 직접 해주세요.
 
   방금 열린 "손쉬운 사용" 화면에서 Hammerspoon 스위치를 켜세요.
+  (영어 macOS: Privacy & Security → Accessibility)
   (목록에 없으면 + 버튼으로 응용 프로그램 → Hammerspoon 추가)
+  (회사 노트북에서 스위치가 잠겨 있으면 회사 보안 정책이 막은 것이라 IT 담당자 허용이 필요해요)
 
 켜는 순간 화면에 "Ghostty 이미지 붙여넣기 준비 완료"가 뜹니다.
 그다음부터 이미지를 복사하고 Ghostty에서 Cmd+V를 누르면 됩니다.

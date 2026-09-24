@@ -4,6 +4,18 @@ Ghostty 터미널에서 Claude Code에 이미지를 `Cmd+V`로 붙여넣을 수 
 
 글자는 잘 붙는데 스크린샷만 안 붙는 분들을 위해 만들었어요. 한글 입력 상태여도 되고, herdr 같은 터미널 관리 도구 안에서도 됩니다.
 
+> English: macOS only. Makes `Cmd+V` paste clipboard images into Claude Code running in Ghostty. Install with the one-line command below.
+
+## 내 컴퓨터에 필요한가요?
+
+| 운영체제 | 이 도구 | 이미지 붙여넣는 법 |
+| --- | --- | --- |
+| **macOS** | 필요해요 | 설치 후 Ghostty에서 `Cmd+V` |
+| **Windows** | 필요 없어요 (Ghostty 윈도우판이 없어요) | Windows Terminal 등에서 Claude Code 입력창에 `Alt+V` |
+| **Linux** | 필요 없어요 | 클립보드 도구(`wl-clipboard` 또는 `xclip`)를 설치하고 `Ctrl+V` |
+
+Windows와 Linux 방법은 Claude Code 프로그램의 동작 방식을 확인해서 적었어요. 이 도구로 직접 시험한 환경은 macOS입니다.
+
 ## 설치 (1분)
 
 터미널에 아래 한 줄을 붙여넣고 Enter를 누르세요.
@@ -14,7 +26,7 @@ curl -fsSL https://raw.githubusercontent.com/henryoon0/ghostty-image-paste/main/
 
 Homebrew나 관리자 비밀번호는 필요 없어요. Hammerspoon이 없으면 공식 배포 파일을 받아 설치하고, 맥을 켤 때 자동으로 실행되게도 설정합니다.
 
-설치가 끝나면 **손쉬운 사용** 설정 화면이 자동으로 열려요. 거기서 **Hammerspoon 스위치 하나만 켜주세요.** 키 입력을 받으려면 이 권한이 필요하고, macOS는 이 권한을 사람만 켤 수 있게 막아두었어요.
+설치가 끝나면 **손쉬운 사용**(영어 macOS: Accessibility) 설정 화면이 자동으로 열려요. 거기서 **Hammerspoon 스위치 하나만 켜주세요.** 키 입력을 받으려면 이 권한이 필요하고, macOS는 이 권한을 사람만 켤 수 있게 막아두었어요.
 
 켜는 순간 화면에 "Ghostty 이미지 붙여넣기 준비 완료"가 뜹니다. 앱을 다시 켤 필요는 없어요.
 
@@ -27,7 +39,8 @@ Claude Code 같은 AI에게 이 링크를 주고 "설치해줘"라고 하면 됩
 > 2. It needs no sudo and no Homebrew. It installs Hammerspoon if missing, installs the module, and opens System Settings → Privacy & Security → Accessibility.
 > 3. Tell the user to turn on the Hammerspoon switch in that pane. You cannot do this step for the user. macOS allows only a person to grant this permission.
 > 4. When the user turns it on, the alert "Ghostty 이미지 붙여넣기 준비 완료" shows. The user does not need to restart anything.
-> 5. To test: the user copies an image (for example `Cmd+Shift+Ctrl+4`), then presses `Cmd+V` in Ghostty. `[Image #1]` shows in Claude Code.
+> 5. The installer writes to `~/.hammerspoon` and `/Applications` (or `~/Applications`), and downloads from github.com. If your sandbox blocks network access or writes outside the project folder, ask the user to allow it or to run the command in their own terminal.
+> 6. To test: the user copies an image (for example `Cmd+Shift+Ctrl+4`), then presses `Cmd+V` in Ghostty. `[Image #1]` shows in Claude Code.
 
 ## 사용법
 
@@ -57,11 +70,23 @@ Claude Code 같은 AI에게 이 링크를 주고 "설치해줘"라고 하면 됩
 
 클립보드에 글자가 있거나 Ghostty가 아닌 앱에서는 아무것도 바꾸지 않아요. 평소 `Cmd+V` 그대로 작동합니다.
 
+## 안 될 때
+
+- **손쉬운 사용 스위치가 잠겨 있어요:** 회사 노트북이면 회사 보안 정책이 막은 거예요. IT 담당자에게 Hammerspoon 허용을 요청하세요.
+- **Hammerspoon을 받지 못했다고 나와요:** 회사 네트워크가 GitHub을 막았을 수 있어요. [hammerspoon.org](https://www.hammerspoon.org)에서 직접 설치한 뒤 설치 명령어를 다시 실행하세요.
+- **`Cmd+V`를 눌러도 경로만 글자로 붙어요:** Claude Code 입력창이 아닌 곳(일반 셸 등)에 붙인 거예요. 이 도구는 경로를 붙이고, 경로를 이미지로 바꾸는 건 Claude Code가 합니다.
+
+그래도 안 되면 아래 결과를 붙여서 알려주세요.
+
+```bash
+sw_vers -productVersion; uname -m; ls -d /Applications/Hammerspoon.app ~/Applications/Hammerspoon.app 2>&1; grep -c ghostty-image-paste ~/.hammerspoon/init.lua
+```
+
 ## 알아두면 좋은 점
 
 - 저장된 이미지는 `~/Library/Caches/ghostty-image-paste/`에 쌓이고, 하루가 지나면 자동으로 지워집니다.
 - Claude Code에서 확인했습니다. 붙여넣은 이미지 경로를 이미지로 인식하는 다른 도구에서도 작동할 수 있지만 확인하지는 않았어요.
-- macOS 전용입니다.
+- macOS 전용입니다. GitHub Actions에서 새 맥(Apple Silicon, Intel)에 Homebrew 없이 설치하는 시험을 매번 돌립니다.
 
 ## 제거
 
@@ -69,7 +94,7 @@ Claude Code 같은 AI에게 이 링크를 주고 "설치해줘"라고 하면 됩
 curl -fsSL https://raw.githubusercontent.com/henryoon0/ghostty-image-paste/main/uninstall.sh | bash
 ```
 
-Hammerspoon 앱 자체는 지우지 않아요. 필요 없으면 `brew uninstall --cask hammerspoon`으로 지우세요.
+Hammerspoon 앱 자체는 지우지 않아요. 필요 없으면 응용 프로그램 폴더에서 Hammerspoon을 휴지통으로 옮기세요.
 
 ## 파일 구성
 
