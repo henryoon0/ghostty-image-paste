@@ -4,6 +4,9 @@
 # 관리자 비밀번호나 Homebrew 없이 설치된다. 사람이 할 일은 "손쉬운 사용" 권한 켜기 하나뿐이다.
 set -euo pipefail
 
+# 본문 전체를 함수로 감싸고 마지막 줄에서 호출한다. curl | bash 도중 끊겨도 반쪽 스크립트가 실행되지 않는다.
+main() {
+
 RAW_URL="https://raw.githubusercontent.com/henryoon0/ghostty-image-paste/main/ghostty-image-paste.lua"
 HS_RELEASE_API="https://api.github.com/repos/Hammerspoon/hammerspoon/releases/latest"
 HS_DIR="$HOME/.hammerspoon"
@@ -94,3 +97,6 @@ cat <<'EOF'
 켜는 순간 화면에 "Ghostty 이미지 붙여넣기 준비 완료"가 뜹니다.
 그다음부터 이미지를 복사하고 Ghostty에서 Cmd+V를 누르면 됩니다.
 EOF
+}
+
+main "$@"
