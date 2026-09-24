@@ -1,0 +1,66 @@
+# 새 컴퓨터(GitHub 가상 머신)에서 설치를 시험한다. 맥은 Homebrew를 PATH에서 뺀 "빈 맥" 조건.
+name: install-test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-13]  # Apple Silicon, Intel
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stub GUI commands and hide Homebrew
+        run: |
+          mkdir -p "$RUNNER_TEMP/stub"
+          for c in open killall osascript; do printf '#!/bin/sh\necho "[stub] %s $*"\n' "$c" > "$RUNNER_TEMP/stub/$c"; done
+          printf '#!/bin/sh\necho "sudo called" >&2\nexit 1\n' > "$RUNNER_TEMP/stub/sudo"
+          chmod +x "$RUNNER_TEMP/stub"/*
+      - name: Install from file (no Homebrew)
+        run: env PATH="$RUNNER_TEMP/stub:/usr/bin:/bin:/usr/sbin:/sbin" bash install.sh
+      - name: Check installed files
+        run: |
+          test -d /Applications/Hammerspoon.app || test -d "$HOME/Applications/Hammerspoon.app"
+          cmp ghostty-image-paste.lua "$HOME/.hammerspoon/ghostty-image-paste.lua"
+          test "$(grep -c 'require("ghostty-image-paste")' "$HOME/.hammerspoon/init.lua")" = 1
+      - name: Install again (must not duplicate)
+        run: |
+          env PATH="$RUNNER_TEMP/stub:/usr/bin:/bin:/usr/sbin:/sbin" bash install.sh
+          test "$(grep -c 'require("ghostty-image-paste")' "$HOME/.hammerspoon/init.lua")" = 1
+      - name: Check Hammerspoon signature
+        run: |
+          APP=/Applications/Hammerspoon.app; [ -d "$APP" ] || APP="$HOME/Applications/Hammerspoon.app"
+          codesign --verify --deep --strict "$APP"
+      - name: Uninstall
+        run: |
+          env PATH="$RUNNER_TEMP/stub:/usr/bin:/bin:/usr/sbin:/sbin" bash uninstall.sh
+          test ! -e "$HOME/.hammerspoon/ghostty-image-paste.lua"
+          test ! -e "$HOME/.hammerspoon/init.lua"
+
+  not-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer must stop with a helpful message
+        run: |
+          set +e
+          out="$(bash install.sh 2>&1)"; code=$?
+          echo "$out"
+          test $code -ne 0
+          echo "$out" | grep -q "macOS 전용"
+          echo "$out" | grep -q -E "Ctrl\+V|Alt\+V"
+          test ! -e "$HOME/.hammerspoon"
+      - name: Shell scripts keep LF line endings
+        run: |
+          ! grep -l $'\r' install.sh uninstall.sh
